@@ -8,15 +8,15 @@ import file from '../assets/file.svg';
 import mic from '../assets/mic.svg';
 import i18n from '../i18n';
 import { GOOGLE_TTS_LANGUAGE_MAP } from '../utils/googleTTSMap';
-import {isSimilarQuery, getHelpingResponse } from '../utils/helping_resp';
-import {diseaseInfo} from '../utils/helping_resp';
+import { isSimilarQuery, getHelpingResponse, diseaseInfo } from '../utils/helping_resp';
+import { transliterateText } from '../utils/transliterateApi';
 
 type SpeechRecognitionType = typeof window.SpeechRecognition | typeof window.webkitSpeechRecognition;
 type RecognitionInstance = InstanceType<NonNullable<SpeechRecognitionType>> | null;
 
 interface msgListType {
   role: 'user' | 'bot' | 'file';
-  content: string; 
+  content: string;
   image?: string; // URL or base64 string
 }
 
@@ -54,11 +54,18 @@ const LANGUAGE_TO_LOCALE: Record<string, string> = {
 export default function SecondPage() {
   const location = useLocation();
   const { t } = useTranslation();
-  const selectedLanguage = (location.state as any)?.language || 'Hindi';
+
+  // Corrected: Initialize selectedLanguage directly from location.state as a state variable
+  const [selectedLanguage, setSelectedLanguage] = useState<string>((location.state as any)?.language || 'Hindi');
+
+  // Derive recognitionLang and targetLanguageCodeForTransliteration from the state
   const recognitionLang = LANGUAGE_TO_LOCALE[selectedLanguage] || 'hi-IN';
+  const targetLanguageCodeForTransliteration = recognitionLang.split('-')[0];
+
   const [botLoading, setBotLoading] = useState(false);
   const [messages, setMessages] = useState<msgListType[]>();
-  const [input, setInput] = useState('');
+  const [rawInput, setRawInput] = useState('');
+  const [displayInput, setDisplayInput] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileImageUrl, setFileImageUrl] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
@@ -74,95 +81,79 @@ export default function SecondPage() {
   useEffect(() => {
     const initialize = async () => {
       const savedLang = localStorage.getItem('appLanguage');
-      const initialBotMessage = 'হ্যালো! আমি তোমার এআই সহকারী। কীভাবে তোমাকে সাহায্য করতে পারি?';
-      setBotmsg(initialBotMessage);
-      setMessages([{ role: 'bot', content: initialBotMessage }]);
+      // Transliterate the initial bot message if not English
+      const initialEnglishBotMessage = 'Hello! I am your AI assistant. How can I help you?';
+      let initialBotMessageForDisplay = initialEnglishBotMessage;
+      if (selectedLanguage !== 'English') {
+        initialBotMessageForDisplay = await transliterateText(initialEnglishBotMessage, targetLanguageCodeForTransliteration);
+      }
+
+      setBotmsg(initialBotMessageForDisplay);
+      setMessages([{ role: 'bot', content: initialBotMessageForDisplay }]);
       if (savedLang) {
         i18n.changeLanguage(savedLang);
       }
     };
     initialize();
-  }, []);
+  }, [selectedLanguage, targetLanguageCodeForTransliteration]);
 
   // File upload handler
   const handleFileClick = () => {
     fileInputRef.current?.click();
   };
 
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (file) {
-  //     setFileName(file.name);
+  // Corrected: Mark handleFileChange as async
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
 
-  //     if (file.type.startsWith('image/')) {
-  //       const reader = new FileReader();
-  //        reader.onload = async (ev) => {
-  //         const imageUrl = ev.target?.result as string;
-  //         const userImageMessage: msgListType = {
-  //           role: 'user',
-  //           content: '',
-  //           image: imageUrl,
-  //         };
-  //         await setMessages(prev => [...(prev || []), userImageMessage]);
-  //         await setFileImageUrl(null);
-  //         await setFileName(null);
-  //       };
-  //       reader.readAsDataURL(file);
-  //       const initialBotMessage : string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n 
-  //       Disease Name : ${diseaseInfo.prediction.disease_name},
-  //       Possible Cure : ${diseaseInfo.cure},
-  //       Prevention : ${diseaseInfo.prevention},`;
-  //       // const formattedMessage = initialBotMessage.replace(/\n/g, "<br />");
-  //       setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
-  //     } else {
-  //       const initialBotMessage : string = "Please upload an image file.";
-  //       setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
-  //       setFileImageUrl(null);
-  //     }
-  //   }
-  // };
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    setFileName(file.name);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
 
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
+        // Corrected: Mark reader.onload as async
+        reader.onload = async (ev) => {
+          const imageUrl = ev.target?.result as string;
 
-      reader.onload = async (ev) => {
-        const imageUrl = ev.target?.result as string;
+          // 1. Add user image message
+          const userImageMessage: msgListType = {
+            role: 'user',
+            content: '',
+            image: imageUrl,
+          };
+          await setMessages(prev => [...(prev || []), userImageMessage]);
 
-        // 1. Add user image message
-        const userImageMessage: msgListType = {
-          role: 'user',
-          content: '',
-          image: imageUrl,
-        };
-        await setMessages(prev => [...(prev || []), userImageMessage]);
-
-        // 2. Then add bot response
-        const initialBotMessage: string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n
+          // 2. Then add bot response (This response will also need transliteration)
+          const diseaseInfoEnglishResponse: string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n
                                             Disease Name : ${diseaseInfo.prediction.disease_name},
                                             Possible Cure : ${diseaseInfo.cure},
                                             Prevention : ${diseaseInfo.prevention},`;
+          let initialBotMessageForDisplay = diseaseInfoEnglishResponse;
+          if (selectedLanguage !== 'English') {
+            initialBotMessageForDisplay = await transliterateText(diseaseInfoEnglishResponse, targetLanguageCodeForTransliteration);
+          }
 
-        await setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
+          await setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessageForDisplay }]);
 
-        // 3. Clean up
+          // 3. Clean up
+          setFileImageUrl(null);
+          setFileName(null);
+          fileInputRef.current!.value = ''; // optional: allow re-upload of same file
+        };
+
+        reader.readAsDataURL(file);
+      } else {
+        // Not an image (This response will also need transliteration)
+        const errorMsgEnglish: string = "Please upload an image file.";
+        let errorMsgForDisplay = errorMsgEnglish;
+        if (selectedLanguage !== 'English') {
+          errorMsgForDisplay = await transliterateText(errorMsgEnglish, targetLanguageCodeForTransliteration);
+        }
+        setMessages(prev => [...(prev || []), { role: 'bot', content: errorMsgForDisplay }]);
         setFileImageUrl(null);
-        setFileName(null);
-        fileInputRef.current!.value = ''; // optional: allow re-upload of same file
-      };
-
-      reader.readAsDataURL(file);
-    } else {
-      // Not an image
-      const errorMsg: string = "Please upload an image file.";
-      setMessages(prev => [...(prev || []), { role: 'bot', content: errorMsg }]);
-      setFileImageUrl(null);
+      }
     }
-  }
-};
+  };
 
 
   // Mic (speech-to-text) handler
@@ -178,7 +169,8 @@ export default function SecondPage() {
       recognitionRef.current.interimResults = false;
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        setInput(prev => prev + transcript);
+        setRawInput(prev => prev + transcript); // Set raw input from speech
+        setDisplayInput(prev => prev + transcript); // Update display input as well
         setListening(false);
       };
       recognitionRef.current.onerror = () => setListening(false);
@@ -230,34 +222,68 @@ export default function SecondPage() {
     }
   };
 
+  // New handler for input field that includes transliteration
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setRawInput(value); // Always store the raw typed input
+
+    // Only transliterate if the selected language is NOT English
+    if (selectedLanguage !== 'English') {
+      // Basic trigger for transliteration: on space or when input is long enough
+      if (value.endsWith(' ') || value.length % 5 === 0 || value.length === 0) {
+        const transliterated = await transliterateText(value, targetLanguageCodeForTransliteration);
+        setDisplayInput(transliterated); // Update the display input with transliterated text
+      } else {
+        setDisplayInput(value); // For other characters, just display the raw input immediately
+      }
+    } else {
+      setDisplayInput(value); // If English, just set display to raw input
+    }
+  };
+
   // Chat send handler
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-    if (input.trim() !== '') {
+    if (rawInput.trim() !== '') {
       const userMsg: msgListType = {
         role: 'user',
-        content: input.trim(),
+        content: displayInput.trim(), // Display the transliterated text in the chat bubble
       };
-      const botMsg: msgListType = {
-        role: 'bot',
-        content: botmsg || '',
-      };
-      if(isSimilarQuery(userMsg.content)) {
-        const helpingResponse = getHelpingResponse();
-        botMsg.content = helpingResponse;
+      
+      setMessages(prev => [...(prev || []), userMsg]);
+      setRawInput(''); // Clear raw input
+      setDisplayInput(''); // Clear display input
+      setBotLoading(true);
+
+      // Determine the bot's raw English response first
+      let botEnglishResponse: string;
+      if(isSimilarQuery(rawInput.trim())) { // Use rawInput for query similarity check
+        botEnglishResponse = getHelpingResponse();
       }
       else {
-        botMsg.content = 'Sorry, I am not able to help you with that.';
+        botEnglishResponse = 'Sorry, I am not able to help you with that.';
       }
-      setMessages(prev => [...(prev || []), userMsg]);
-      setInput('');
-      setBotLoading(true);
-      await setTimeout(() => {
+
+      // Transliterate the bot's response if the selected language is not English
+      let botDisplayResponse = botEnglishResponse;
+      if (selectedLanguage !== 'English') {
+        botDisplayResponse = await transliterateText(botEnglishResponse, targetLanguageCodeForTransliteration);
+      }
+
+      const botMsg: msgListType = {
+        role: 'bot',
+        content: botDisplayResponse, // Use the transliterated text for display
+      };
+
+      await setTimeout(async () => {
         console.log("This runs after 3 seconds");
         setBotLoading(false);
         setMessages(prev => [...(prev || []), botMsg]);
+
+        // Play the transliterated bot speech
+        await playBotSpeech(botDisplayResponse);
       }, 3000);
     }
   };
@@ -287,14 +313,14 @@ export default function SecondPage() {
             </div>
           ))}
           {botLoading && (
-            <div 
-              className="kb-chat-bubble kb-chat-bot" 
-              ref={messagesEndRef} 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                height: '50px' 
+            <div
+              className="kb-chat-bubble kb-chat-bot"
+              ref={messagesEndRef}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '50px'
               }}>
               <img src="/loader_bot.gif" alt="..." className='loader-bot'/>
             </div>
@@ -318,12 +344,12 @@ export default function SecondPage() {
           <input
             className="kb-chat-input"
             type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
+            value={displayInput}
+            onChange={handleInputChange}
             placeholder={t('instructions') + "..."}
             autoFocus
           />
-          <button className="kb-chat-send" type="submit" disabled={input.trim() === '' && !fileName}>
+          <button className="kb-chat-send" type="submit" disabled={rawInput.trim() === '' && !fileName}>
             <svg width="28" height="28" fill="none" stroke="#388e2b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6,22 22,14 6,6"/></svg>
           </button>
         </form>
