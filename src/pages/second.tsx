@@ -89,38 +89,81 @@ export default function SecondPage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     setFileName(file.name);
 
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const imageUrl = ev.target?.result as string;
-          const userImageMessage: msgListType = {
-            role: 'user',
-            content: '',
-            image: imageUrl,
-          };
-          setMessages(prev => [...(prev || []), userImageMessage]);
-          setFileImageUrl(null);
-          setFileName(null);
+  //     if (file.type.startsWith('image/')) {
+  //       const reader = new FileReader();
+  //        reader.onload = async (ev) => {
+  //         const imageUrl = ev.target?.result as string;
+  //         const userImageMessage: msgListType = {
+  //           role: 'user',
+  //           content: '',
+  //           image: imageUrl,
+  //         };
+  //         await setMessages(prev => [...(prev || []), userImageMessage]);
+  //         await setFileImageUrl(null);
+  //         await setFileName(null);
+  //       };
+  //       reader.readAsDataURL(file);
+  //       const initialBotMessage : string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n 
+  //       Disease Name : ${diseaseInfo.prediction.disease_name},
+  //       Possible Cure : ${diseaseInfo.cure},
+  //       Prevention : ${diseaseInfo.prevention},`;
+  //       // const formattedMessage = initialBotMessage.replace(/\n/g, "<br />");
+  //       setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
+  //     } else {
+  //       const initialBotMessage : string = "Please upload an image file.";
+  //       setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
+  //       setFileImageUrl(null);
+  //     }
+  //   }
+  // };
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    setFileName(file.name);
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+
+      reader.onload = async (ev) => {
+        const imageUrl = ev.target?.result as string;
+
+        // 1. Add user image message
+        const userImageMessage: msgListType = {
+          role: 'user',
+          content: '',
+          image: imageUrl,
         };
-        reader.readAsDataURL(file);
-        const initialBotMessage : string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n 
-        Disease Name : ${diseaseInfo.prediction.disease_name},
-        Possible Cure : ${diseaseInfo.cure},
-        Prevention : ${diseaseInfo.prevention},`;
-        // const formattedMessage = initialBotMessage.replace(/\n/g, "<br />");
-        setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
-      } else {
-        const initialBotMessage : string = "Please upload an image file.";
-        setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
+        await setMessages(prev => [...(prev || []), userImageMessage]);
+
+        // 2. Then add bot response
+        const initialBotMessage: string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n
+                                            Disease Name : ${diseaseInfo.prediction.disease_name},
+                                            Possible Cure : ${diseaseInfo.cure},
+                                            Prevention : ${diseaseInfo.prevention},`;
+
+        await setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
+
+        // 3. Clean up
         setFileImageUrl(null);
-      }
+        setFileName(null);
+        fileInputRef.current!.value = ''; // optional: allow re-upload of same file
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      // Not an image
+      const errorMsg: string = "Please upload an image file.";
+      setMessages(prev => [...(prev || []), { role: 'bot', content: errorMsg }]);
+      setFileImageUrl(null);
     }
-  };
+  }
+};
+
 
   // Mic (speech-to-text) handler
   const handleMicClick = () => {
