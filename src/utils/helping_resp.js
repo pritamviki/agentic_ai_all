@@ -72,7 +72,7 @@ function getRandomIndex() {
 
 export function getHelpingResponse() {
   const index = getRandomIndex();
-  return helping_resp_hindi[index].resp;
+  return helping_resp[index].resp;
 }
 
 export function isSimilarQuery(input) {
@@ -85,11 +85,58 @@ export function isSimilarQuery(input) {
     "agriculture", "financial", "aid", "livestock",
     "seeds", "fertilizers", "equipment", "training",
     "grants", "NGO"
-];
+  ];
+  const farmerLossKeywords = [
+    "farmer", "crop loss", "crop failure", "drought", "flood", "storm", "hailstorm",
+    "cyclone", "pest attack", "plant disease", "yield loss", "low yield", "agriculture damage",
+    "livestock death", "soil erosion", "landslide", "climate change", "natural disaster",
+    "farm insurance", "crop insurance", "claim", "subsidy", "loan", "loan waiver", "compensation",
+    "financial aid", "relief fund", "government scheme", "support", "help", "damage report",
+    "rehabilitation", "grant", "seed loss", "fertilizer subsidy", "farmer suicide", "input cost",
+    "weather failure", "equipment damage", "market loss", "harvest loss", "price crash", "debt",
+    "NGO support", "farming failure", "agri loan", "irrigation failure", "crop subsidy"
+  ];
+  const hindiKeywords = [
+    "खोया", "फसल", "तूफान", "चक्रवात", "बाढ़", "आपदा", "सरकार", "मदद",
+    "समर्थन", "नुकसान", "मुआवजा", "राहत", "किसान", "सहायता", "आवेदन", "निधि",
+    "बीमा", "रिपोर्ट", "दावा", "आपातकाल", "पुनर्वास", "कृषि", "वित्तीय", "पशुधन",
+    "बीज", "उर्वरक", "उपकरण", "प्रशिक्षण", "अनुदान", "एनजीओ", "ऋण", "मौसम",
+    "सूखा", "पैदावार", "सब्सिडी", "कीट", "जलवायु", "कर्ज़ माफी", "प्राकृतिक आपदा",
+    "फसल क्षति", "बचाव", "भूमि", "बारिश", "मुआवजा फॉर्म"
+  ];
+  const hindiFarmerKeywords = [
+    "किसान", "फसल नुकसान", "फसल बर्बादी", "सूखा", "बाढ़", "तूफान", "ओलावृष्टि", "चक्रवात",
+    "कीट हमला", "फसल रोग", "उपज हानि", "कम उपज", "कृषि क्षति", "पशुधन मृत्यु", "मिट्टी कटाव",
+    "भूस्खलन", "जलवायु परिवर्तन", "प्राकृतिक आपदा", "फसल बीमा", "दावा", "सब्सिडी", "ऋण",
+    "कर्ज माफी", "मुआवजा", "वित्तीय सहायता", "राहत कोष", "सरकारी योजना", "सहायता", "समर्थन",
+    "क्षति रिपोर्ट", "पुनर्वास", "अनुदान", "बीज नुकसान", "उर्वरक सब्सिडी", "किसान आत्महत्या",
+    "इनपुट लागत", "मौसम विफलता", "उपकरण क्षति", "बाज़ार हानि", "फसल मूल्य गिरावट", "ऋण बोझ",
+    "एनजीओ सहायता", "खेती में विफलता", "सिंचाई विफलता", "फसल सब्सिडी"
+  ];
+  const bengaliKeywords = [
+    "হারানো", "ফসল", "ঘূর্ণিঝড়", "ঝড়", "বন্যা", "দুর্যোগ", "সরকার", "সহায়তা",
+    "সমর্থন", "ক্ষতি", "ক্ষতিপূরণ", "ত্রাণ", "কৃষক", "সহযোগিতা", "আবেদন", "তহবিল",
+    "বিমা", "প্রতিবেদন", "দাবি", "জরুরি", "পুনর্বাসন", "কৃষি", "আর্থিক", "পশুপালন",
+    "বীজ", "সার", "সরঞ্জাম", "প্রশিক্ষণ", "অনুদান", "এনজিও", "ঋণ", "আবহাওয়া",
+    "খরা", "উৎপাদন", "ভর্তুকি", "পোকামাকড়", "জলবায়ু", "ঋণ মওকুফ", "প্রাকৃতিক দুর্যোগ",
+    "ফসল নষ্ট", "উদ্ধার", "জমি", "বৃষ্টি", "ক্ষতিপূরণ ফর্ম"
+  ];
+  const bengaliFarmerKeywords = [
+    "কৃষক", "ফসল ক্ষতি", "ফসল নষ্ট", "খরা", "বন্যা", "ঝড়", "শিলাবৃষ্টি", "ঘূর্ণিঝড়",
+    "পোকামাকড়ের আক্রমণ", "ফসল রোগ", "ফলনের ক্ষয়", "কম ফলন", "কৃষি ক্ষতি", "গবাদি পশু মৃত্যু",
+    "মাটি ক্ষয়", "ভূমিধস", "জলবায়ু পরিবর্তন", "প্রাকৃতিক দুর্যোগ", "ফসল বীমা", "দাবি",
+    "ভর্তুকি", "ঋণ", "ঋণ মওকুফ", "ক্ষতিপূরণ", "আর্থিক সহায়তা", "ত্রাণ তহবিল", "সরকারি প্রকল্প",
+    "সহায়তা", "সমর্থন", "ক্ষতির প্রতিবেদন", "পুনর্বাসন", "অনুদান", "বীজ ক্ষতি", "সার ভর্তুকি",
+    "কৃষক আত্মহত্যা", "ইনপুট খরচ", "আবহাওয়া বিপর্যয়", "যন্ত্রপাতি ক্ষতি", "বাজারে ক্ষতি",
+    "মূল্য হ্রাস", "ঋণ বোঝা", "এনজিও সহায়তা", "চাষে ব্যর্থতা", "সেচ ব্যবস্থার সমস্যা", "ফসল ভর্তুকি"
+  ];
+  const allKeywords = [...keywords, ...farmerLossKeywords, ...hindiKeywords, ...hindiFarmerKeywords, ...bengaliKeywords, ...bengaliFarmerKeywords];
+
+
   const inputLower = input.toLowerCase();
 
   let matchCount = 0;
-  keywords.forEach(word => {
+  allKeywords.forEach(word => {
     if (inputLower.includes(word)) {
       matchCount++;
     }
