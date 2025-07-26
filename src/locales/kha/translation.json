@@ -1,0 +1,18 @@
+{
+  "title": "KrishiBadhu",
+  "subtitle": "Kane ka dei ka nuksa app .",
+  "buttons": {
+    "login": "Login",
+    "signup": "Ka dak Up",
+    "submit": "Ai",
+    "cancel": "Pyndam"
+  },
+  "language": "Jait ktien",
+  "welcome": "Pdiang sngewbha ia u KrishiBadhu",
+  "state": "Jinglong",
+  "select": "Jied",
+  "search": "Wad",
+  "loading": "Ka Jingkhriat...",
+  "error": "Ka jingbakla",
+  "instructions": "Type ia ka jingkylli jong phi hangne ."
+}

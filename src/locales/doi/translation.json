@@ -1,0 +1,18 @@
+{
+  "title": "कृषिबंधु",
+  "subtitle": "एह् इक नमूना ऐप ऐ",
+  "buttons": {
+    "login": "लॉगिन ऐ",
+    "signup": "साइन अप करो",
+    "submit": "दर्ज करो",
+    "cancel": "रद्द"
+  },
+  "language": "भाशा",
+  "welcome": "Krishibandhu च तुंदा सुआगत ऐ",
+  "state": "सूबा",
+  "select": "चुनो",
+  "search": "तपाश",
+  "loading": "लोड हो रहा है...",
+  "error": "इक त्रुटि होई",
+  "instructions": "अपनी क्वेरी टाइप करो इत्थे"
+}

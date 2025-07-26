@@ -1,0 +1,18 @@
+{
+  "title": "Krisibandhu chuan a ti a.",
+  "subtitle": "Hei hi sample app a ni a .",
+  "buttons": {
+    "login": "login a ni .",
+    "signup": "Sign up rawh .",
+    "submit": "Thehlut",
+    "cancel": "Titawp"
+  },
+  "language": "Tawng",
+  "welcome": "Krisibandhu ah hian kan lo lawm a che.",
+  "state": "Nihphung",
+  "select": "Thlang",
+  "search": "Zawng",
+  "loading": "Loading a awm...",
+  "error": "Thil dik lo a thleng .",
+  "instructions": "Hetah hian i query kha type la ."
+}

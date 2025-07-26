@@ -1,0 +1,18 @@
+{
+  "title": "क्रिशिबन्दु २.",
+  "subtitle": "ई एकटा नमूना ऐप अछि",
+  "buttons": {
+    "login": "लॉगिन 2019।",
+    "signup": "साइन अप 2019।",
+    "submit": "जमा",
+    "cancel": "रद्द"
+  },
+  "language": "भाषा",
+  "welcome": "Krishibandhu में अपनेक स्वागत अछि",
+  "state": "राज्य",
+  "select": "चुननाइ",
+  "search": "खोजनाइ",
+  "loading": "लोडिंग...",
+  "error": "एकटा त्रुटि भेल .",
+  "instructions": "अपन क्वेरी एतय टाइप करू"
+}

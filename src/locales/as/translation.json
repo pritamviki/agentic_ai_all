@@ -1,0 +1,18 @@
+{
+  "title": "Krishibandhu",
+  "subtitle": "এইটো এটা নমুনা এপ",
+  "buttons": {
+    "login": "লগইন",
+    "signup": "চাইন আপ কৰক",
+    "submit": "দাখিল কৰক",
+    "cancel": "বাতিল কৰক"
+  },
+  "language": "ভাষা",
+  "welcome": "Krishibandhu লৈ স্বাগতম",
+  "state": "ৰাজ্য",
+  "select": "চয়ন কৰা",
+  "search": "সন্ধান",
+  "loading": "লোডিং...",
+  "error": "এটা ভুল হৈছে",
+  "instructions": "আপোনাৰ প্ৰশ্ন ইয়াত টাইপ কৰক"
+}

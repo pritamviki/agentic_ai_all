@@ -1,0 +1,23 @@
+.kb-header {
+  width: 100%;
+  height: fit-content;
+  background: #5ca945;
+  color: #fff;
+//   padding: 20px 24px 12px 24px;
+padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+//   border-radius: 0 0 12px 12px;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 1000;
+    .kb-title {
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    }
+}

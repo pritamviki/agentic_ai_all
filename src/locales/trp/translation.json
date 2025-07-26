@@ -1,0 +1,18 @@
+{
+  "title": "a",
+  "subtitle": "O borok ni bagwi.",
+  "buttons": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "submit": "Yapharwi rwma",
+    "cancel": "rosai namani"
+  },
+  "language": "Kok",
+  "welcome": "Chwng 10.",
+  "state": "Haste",
+  "select": "Saidi",
+  "search": "Naitukdi",
+  "loading": "Joto",
+  "error": ".",
+  "instructions": "Nini thani nini thani tongo!"
+}
