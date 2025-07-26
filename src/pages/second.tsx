@@ -8,6 +8,8 @@ import file from '../assets/file.svg';
 import mic from '../assets/mic.svg';
 import i18n from '../i18n';
 import { GOOGLE_TTS_LANGUAGE_MAP } from '../utils/googleTTSMap';
+import {isSimilarQuery, getHelpingResponse } from '../utils/helping_resp';
+import {diseaseInfo} from '../utils/helping_resp';
 
 type SpeechRecognitionType = typeof window.SpeechRecognition | typeof window.webkitSpeechRecognition;
 type RecognitionInstance = InstanceType<NonNullable<SpeechRecognitionType>> | null;
@@ -54,7 +56,7 @@ export default function SecondPage() {
   const { t } = useTranslation();
   const selectedLanguage = (location.state as any)?.language || 'Hindi';
   const recognitionLang = LANGUAGE_TO_LOCALE[selectedLanguage] || 'hi-IN';
-
+  const [botLoading, setBotLoading] = useState(false);
   const [messages, setMessages] = useState<msgListType[]>();
   const [input, setInput] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
@@ -106,7 +108,15 @@ export default function SecondPage() {
           setFileName(null);
         };
         reader.readAsDataURL(file);
+        const initialBotMessage : string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n 
+        Disease Name : ${diseaseInfo.prediction.disease_name},
+        Possible Cure : ${diseaseInfo.cure},
+        Prevention : ${diseaseInfo.prevention},`;
+        // const formattedMessage = initialBotMessage.replace(/\n/g, "<br />");
+        setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
       } else {
+        const initialBotMessage : string = "Please upload an image file.";
+        setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessage }]);
         setFileImageUrl(null);
       }
     }
@@ -187,14 +197,25 @@ export default function SecondPage() {
         role: 'user',
         content: input.trim(),
       };
-
       const botMsg: msgListType = {
         role: 'bot',
         content: botmsg || '',
       };
-
-      setMessages(prev => [...(prev || []), userMsg, botMsg]);
+      if(isSimilarQuery(userMsg.content)) {
+        const helpingResponse = getHelpingResponse();
+        botMsg.content = helpingResponse;
+      }
+      else {
+        botMsg.content = 'Sorry, I am not able to help you with that.';
+      }
+      setMessages(prev => [...(prev || []), userMsg]);
       setInput('');
+      setBotLoading(true);
+      await setTimeout(() => {
+        console.log("This runs after 3 seconds");
+        setBotLoading(false);
+        setMessages(prev => [...(prev || []), botMsg]);
+      }, 3000);
     }
   };
 
@@ -222,6 +243,19 @@ export default function SecondPage() {
               )}
             </div>
           ))}
+          {botLoading && (
+            <div 
+              className="kb-chat-bubble kb-chat-bot" 
+              ref={messagesEndRef} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                height: '50px' 
+              }}>
+              <img src="/loader_bot.gif" alt="..." className='loader-bot'/>
+            </div>
+          )}
         </div>
 
         <form className="kb-chat-input-bar" onSubmit={handleSend}>
