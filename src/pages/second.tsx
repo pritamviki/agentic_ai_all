@@ -8,7 +8,7 @@ import file from '../assets/file.svg';
 import mic from '../assets/mic.svg';
 import i18n from '../i18n';
 import { GOOGLE_TTS_LANGUAGE_MAP } from '../utils/googleTTSMap';
-import { isSimilarQuery, getHelpingResponse, diseaseInfo } from '../utils/helping_resp';
+import { diseaseInfo } from '../utils/helping_resp'; // Keep diseaseInfo for image response
 import { transliterateText } from '../utils/transliterateApi';
 
 type SpeechRecognitionType = typeof window.SpeechRecognition | typeof window.webkitSpeechRecognition;
@@ -55,10 +55,8 @@ export default function SecondPage() {
   const location = useLocation();
   const { t } = useTranslation();
 
-  // Corrected: Initialize selectedLanguage directly from location.state as a state variable
   const [selectedLanguage, setSelectedLanguage] = useState<string>((location.state as any)?.language || 'Hindi');
 
-  // Derive recognitionLang and targetLanguageCodeForTransliteration from the state
   const recognitionLang = LANGUAGE_TO_LOCALE[selectedLanguage] || 'hi-IN';
   const targetLanguageCodeForTransliteration = recognitionLang.split('-')[0];
 
@@ -74,6 +72,8 @@ export default function SecondPage() {
   const recognitionRef = useRef<RecognitionInstance>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -81,7 +81,6 @@ export default function SecondPage() {
   useEffect(() => {
     const initialize = async () => {
       const savedLang = localStorage.getItem('appLanguage');
-      // Transliterate the initial bot message if not English
       const initialEnglishBotMessage = 'Hello! I am your AI assistant. How can I help you?';
       let initialBotMessageForDisplay = initialEnglishBotMessage;
       if (selectedLanguage !== 'English') {
@@ -97,12 +96,10 @@ export default function SecondPage() {
     initialize();
   }, [selectedLanguage, targetLanguageCodeForTransliteration]);
 
-  // File upload handler
   const handleFileClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Corrected: Mark handleFileChange as async
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -111,7 +108,6 @@ export default function SecondPage() {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
 
-        // Corrected: Mark reader.onload as async
         reader.onload = async (ev) => {
           const imageUrl = ev.target?.result as string;
 
@@ -123,22 +119,30 @@ export default function SecondPage() {
           };
           await setMessages(prev => [...(prev || []), userImageMessage]);
 
-          // 2. Then add bot response (This response will also need transliteration)
-          const diseaseInfoEnglishResponse: string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n
+          setBotLoading(true); // Start loading animation for image response
+
+          // 2. Add bot response after 7 seconds (This response will also need transliteration)
+          setTimeout(async () => {
+            const diseaseInfoEnglishResponse: string = `Your crop name : ${diseaseInfo.prediction.crop_name},\n
                                             Disease Name : ${diseaseInfo.prediction.disease_name},
                                             Possible Cure : ${diseaseInfo.cure},
                                             Prevention : ${diseaseInfo.prevention},`;
-          let initialBotMessageForDisplay = diseaseInfoEnglishResponse;
-          if (selectedLanguage !== 'English') {
-            initialBotMessageForDisplay = await transliterateText(diseaseInfoEnglishResponse, targetLanguageCodeForTransliteration);
-          }
+            let initialBotMessageForDisplay = diseaseInfoEnglishResponse;
+            if (selectedLanguage !== 'English') {
+              initialBotMessageForDisplay = await transliterateText(diseaseInfoEnglishResponse, targetLanguageCodeForTransliteration);
+            }
 
-          await setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessageForDisplay }]);
+            setBotLoading(false); // End loading animation
+            await setMessages(prev => [...(prev || []), { role: 'bot', content: initialBotMessageForDisplay }]);
 
-          // 3. Clean up
-          setFileImageUrl(null);
-          setFileName(null);
-          fileInputRef.current!.value = ''; // optional: allow re-upload of same file
+            // Play the bot speech after the message is displayed
+            await playBotSpeech(initialBotMessageForDisplay);
+
+            // 3. Clean up
+            setFileImageUrl(null);
+            setFileName(null);
+            fileInputRef.current!.value = ''; // optional: allow re-upload of same file
+          }, 7000); // 7-second timer
         };
 
         reader.readAsDataURL(file);
@@ -156,7 +160,6 @@ export default function SecondPage() {
   };
 
 
-  // Mic (speech-to-text) handler
   const handleMicClick = () => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       alert('Speech recognition not supported in this browser.');
@@ -169,8 +172,8 @@ export default function SecondPage() {
       recognitionRef.current.interimResults = false;
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        setRawInput(prev => prev + transcript); // Set raw input from speech
-        setDisplayInput(prev => prev + transcript); // Update display input as well
+        setRawInput(prev => prev + transcript);
+        setDisplayInput(prev => prev + transcript);
         setListening(false);
       };
       recognitionRef.current.onerror = () => setListening(false);
@@ -181,7 +184,6 @@ export default function SecondPage() {
     recognitionRef.current.start();
   };
 
-  // Google TTS function using access token
   const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
 
   const playBotSpeech = async (text: string) => {
@@ -222,26 +224,22 @@ export default function SecondPage() {
     }
   };
 
-  // New handler for input field that includes transliteration
   const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setRawInput(value); // Always store the raw typed input
+    setRawInput(value);
 
-    // Only transliterate if the selected language is NOT English
     if (selectedLanguage !== 'English') {
-      // Basic trigger for transliteration: on space or when input is long enough
       if (value.endsWith(' ') || value.length % 5 === 0 || value.length === 0) {
         const transliterated = await transliterateText(value, targetLanguageCodeForTransliteration);
-        setDisplayInput(transliterated); // Update the display input with transliterated text
+        setDisplayInput(transliterated);
       } else {
-        setDisplayInput(value); // For other characters, just display the raw input immediately
+        setDisplayInput(value);
       }
     } else {
-      setDisplayInput(value); // If English, just set display to raw input
+      setDisplayInput(value);
     }
   };
 
-  // Chat send handler
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -249,24 +247,47 @@ export default function SecondPage() {
     if (rawInput.trim() !== '') {
       const userMsg: msgListType = {
         role: 'user',
-        content: displayInput.trim(), // Display the transliterated text in the chat bubble
+        content: displayInput.trim(),
       };
       
       setMessages(prev => [...(prev || []), userMsg]);
-      setRawInput(''); // Clear raw input
-      setDisplayInput(''); // Clear display input
+      setRawInput('');
+      setDisplayInput('');
       setBotLoading(true);
 
-      // Determine the bot's raw English response first
       let botEnglishResponse: string;
-      if(isSimilarQuery(rawInput.trim())) { // Use rawInput for query similarity check
-        botEnglishResponse = getHelpingResponse();
-      }
-      else {
-        botEnglishResponse = 'Sorry, I am not able to help you with that.';
+
+      if (!CHAT_API_URL) {
+        console.error('CHAT_API_URL is not defined in environment variables.');
+        botEnglishResponse = 'Chat service is unavailable. Please check the application configuration.';
+      } else {
+        try {
+          const chatResponse = await fetch(CHAT_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: "user123",
+              message: rawInput.trim(),
+            }),
+          });
+
+          if (!chatResponse.ok) {
+            const errorData = await chatResponse.json();
+            throw new Error(errorData.error || 'Failed to get response from chat API.');
+          }
+
+          const data = await chatResponse.json();
+          botEnglishResponse = data.response;
+
+        } catch (error: any) {
+          console.error('Error fetching from chat API:', error);
+          botEnglishResponse = 'Sorry, I am currently unable to provide a response.';
+          if (error.message.includes('Failed to fetch')) {
+            botEnglishResponse = 'Could not connect to the chat service. Please ensure the backend is running.';
+          }
+        }
       }
 
-      // Transliterate the bot's response if the selected language is not English
       let botDisplayResponse = botEnglishResponse;
       if (selectedLanguage !== 'English') {
         botDisplayResponse = await transliterateText(botEnglishResponse, targetLanguageCodeForTransliteration);
@@ -274,15 +295,13 @@ export default function SecondPage() {
 
       const botMsg: msgListType = {
         role: 'bot',
-        content: botDisplayResponse, // Use the transliterated text for display
+        content: botDisplayResponse,
       };
 
       await setTimeout(async () => {
         console.log("This runs after 3 seconds");
         setBotLoading(false);
         setMessages(prev => [...(prev || []), botMsg]);
-
-        // Play the transliterated bot speech
         await playBotSpeech(botDisplayResponse);
       }, 3000);
     }
