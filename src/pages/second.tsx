@@ -7,8 +7,6 @@ import Header from '../components/Header';
 import file from '../assets/file.svg';
 import mic from '../assets/mic.svg';
 import i18n from '../i18n';
-import { GOOGLE_TTS_LANGUAGE_MAP } from '../utils/googleTTSMap';
-import { diseaseInfo } from '../utils/helping_resp'; // Keep diseaseInfo for image response
 import { transliterateText } from '../utils/transliterateApi';
 
 type SpeechRecognitionType = typeof window.SpeechRecognition | typeof window.webkitSpeechRecognition;
@@ -19,6 +17,26 @@ interface msgListType {
   content: string;
   image?: string; // URL or base64 string
 }
+
+// Keeping diseaseInfo here as it's directly used in handleFileChange
+const diseaseInfo = {
+  prediction: {
+    crop_name: "Apple",
+    disease_name: "Cedar Apple Rust"
+  },
+  confidence: 1.0000,
+  cure: [
+    "Apply fungicides such as myclobutanil or propiconazole early in the season.",
+    "Remove infected leaves and galls from nearby juniper trees to reduce spore spread.",
+    "Use systemic fungicides at 7–14 day intervals during the infection period."
+  ],
+  prevention: [
+    "Plant resistant apple varieties (e.g., Redfree, Liberty, or Freedom).",
+    "Avoid planting apple trees near eastern red cedar or juniper species.",
+    "Prune apple trees regularly to improve air circulation and reduce humidity.",
+    "Apply preventive fungicide sprays during early spring before symptoms appear."
+  ]
+};
 
 const LANGUAGE_TO_LOCALE: Record<string, string> = {
   Hindi: 'hi-IN',
@@ -55,7 +73,8 @@ export default function SecondPage() {
   const location = useLocation();
   const { t } = useTranslation();
 
-  const [selectedLanguage, setSelectedLanguage] = useState<string>((location.state as any)?.language || 'Hindi');
+  // Changed from useState to a constant, as setSelectedLanguage was not used after initial render
+  const selectedLanguage: string = (location.state as any)?.language || 'Hindi';
 
   const recognitionLang = LANGUAGE_TO_LOCALE[selectedLanguage] || 'hi-IN';
   const targetLanguageCodeForTransliteration = recognitionLang.split('-')[0];
@@ -65,9 +84,8 @@ export default function SecondPage() {
   const [rawInput, setRawInput] = useState('');
   const [displayInput, setDisplayInput] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
-  const [fileImageUrl, setFileImageUrl] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
-  const [botmsg, setBotmsg] = useState<string>();
+  // const [botmsg, setBotmsg] = useState<string>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<RecognitionInstance>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -87,7 +105,7 @@ export default function SecondPage() {
         initialBotMessageForDisplay = await transliterateText(initialEnglishBotMessage, targetLanguageCodeForTransliteration);
       }
 
-      setBotmsg(initialBotMessageForDisplay);
+      // Directly setting the message in `messages` state
       setMessages([{ role: 'bot', content: initialBotMessageForDisplay }]);
       if (savedLang) {
         i18n.changeLanguage(savedLang);
@@ -139,7 +157,6 @@ export default function SecondPage() {
             await playBotSpeech(initialBotMessageForDisplay);
 
             // 3. Clean up
-            setFileImageUrl(null);
             setFileName(null);
             fileInputRef.current!.value = ''; // optional: allow re-upload of same file
           }, 7000); // 7-second timer
@@ -154,7 +171,6 @@ export default function SecondPage() {
           errorMsgForDisplay = await transliterateText(errorMsgEnglish, targetLanguageCodeForTransliteration);
         }
         setMessages(prev => [...(prev || []), { role: 'bot', content: errorMsgForDisplay }]);
-        setFileImageUrl(null);
       }
     }
   };
