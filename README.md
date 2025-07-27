@@ -1,69 +1,47 @@
-# React + TypeScript + Vite
+# KrishiBandhu - Multilingual Healthcare Chatbot
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based multilingual healthcare chatbot application with voice interaction, image analysis, and comprehensive support for Indian languages.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **25+ Indian Languages**: Full support with real-time transliteration
+- **Voice Interaction**: Speech-to-text input and text-to-speech output
+- **Image Analysis**: Upload medical images for AI-powered diagnosis
+- **Real-time Chat**: Interactive healthcare chatbot
+- **State Selection**: Location-based customization
+- **Google Cloud Integration**: TTS and translation services
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend**: React 19, TypeScript, Vite
+- **Backend**: Node.js, Express
+- **Styling**: SCSS
+- **Routing**: React Router DOM
+- **i18n**: react-i18next
+- **APIs**: Google Cloud TTS, Google Translate
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📋 Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- Node.js (v16+)
+- Google Cloud account with TTS API enabled
+- Google Translate API key
+- Google Cloud service account JSON file
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## ⚡ Quick Start
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clone and install**:
+```bash
+git clone <repository-url>
+cd Agentic_hack_v2
+npm install
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Environment setup - Create .env:
+
+Start servers:
+
+# Terminal 1 - TTS Backend
+node server.js
+
+# Terminal 2 - Frontend
+npm run dev
